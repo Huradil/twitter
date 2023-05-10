@@ -7,7 +7,8 @@ from .models import User,Profile
 class UserRegisterSerializer(serializers.ModelSerializer):
     phone_number=serializers.CharField(max_length=13)
     short_info=serializers.CharField()
-    password=serializers.CharField(write_only=True,validators=[
+    password=serializers.CharField(write_only=True,
+                                   validators=[
         RegexValidator(
             regex='^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])[\w@#$%^&+=]{8,}$',
             message='пароль должен содержать цифру и спецсимвол и он должен быть не менее 8 символов'
