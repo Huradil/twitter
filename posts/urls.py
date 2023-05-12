@@ -7,6 +7,7 @@ router=routers.DefaultRouter()
 
 router.register('tweet',views.TweetViewSet,basename='tweet')
 router.register('reaction_type',views.ReactionTypeViewSet)
+router.register('reply',views.ReplyViewSet)
 
 urlpatterns=[
     path('', include(router.urls)),

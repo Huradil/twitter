@@ -5,6 +5,8 @@ from .models import Reply, Tweet,ReactionType,Reaction,ReplyReaction
 
 
 class ReplySerializer(serializers.ModelSerializer):
+    reactions=serializers.ReadOnlyField(source='get_reactions')
+
     class Meta:
         model = Reply
         fields = "__all__"
@@ -12,6 +14,9 @@ class ReplySerializer(serializers.ModelSerializer):
 
 
 class TweetSerializer(serializers.ModelSerializer):
+    reactions=serializers.ReadOnlyField(source='get_reactions')
+    all_reactions=serializers.ReadOnlyField()
+
     class Meta:
         model = Tweet
         fields = "__all__"

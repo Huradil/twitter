@@ -1,16 +1,19 @@
+from datetime import timedelta, datetime
 from rest_framework import generics
-from rest_framework.response import Response
-from rest_framework import viewsets
-from rest_framework.authentication import BasicAuthentication,TokenAuthentication,SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import get_object_or_404
-from rest_framework.decorators import action
 from rest_framework import permissions
-from datetime import timedelta,datetime
+from rest_framework import viewsets
+from rest_framework.authentication import BasicAuthentication, TokenAuthentication, SessionAuthentication
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.generics import get_object_or_404
+from rest_framework import filters
+from rest_framework.pagination import LimitOffsetPagination
 
-from .serializers import TweetSerializer,ReplySerializer,ReactionSerializer,ReactionTypeSerializer,ReplyReactionSerializer
-from .models import Tweet,Reply,ReactionType,Reaction,ReplyReaction
-from .permissions import IsAuthorOrIsAuthenticated,IsAdminOrReadOnly
+from .models import Tweet, Reply, ReactionType, ReplyReaction
+from .permissions import IsAuthorOrIsAuthenticated, IsAdminOrReadOnly
+from .serializers import TweetSerializer, ReplySerializer, ReactionSerializer, ReactionTypeSerializer, \
+    ReplyReactionSerializer
+from . import paginations
 
 
 class TweetViewSet(viewsets.ModelViewSet):
@@ -18,6 +21,11 @@ class TweetViewSet(viewsets.ModelViewSet):
     serializer_class = TweetSerializer
     authentication_classes = [TokenAuthentication,BasicAuthentication,SessionAuthentication]
     permission_classes = [IsAuthorOrIsAuthenticated,]
+    filter_backends = [filters.SearchFilter,filters.OrderingFilter]
+    # pagination_class = paginations.TweetNumberPagination
+    pagination_class = LimitOffsetPagination
+    search_fields = ['text','profile__user__username']
+    ordering_fields = ['updated_at', 'profile__user_id']
 
     def perform_create(self, serializer):
         serializer.save(profile=self.request.user.profile)
@@ -48,14 +56,10 @@ class ReplyViewSet(viewsets.ModelViewSet):
     serializer_class = ReplySerializer
     authentication_classes = [TokenAuthentication,BasicAuthentication,SessionAuthentication]
     permission_classes = [IsAuthorOrIsAuthenticated,]
-
-    def get_queryset(self):
-        return super().get_queryset().filter(tweet_id=self.kwargs['tweet_id'])
-
-    def perform_create(self, serializer):
-        tweet_id=self.kwargs['tweet_id']
-        tweet = Tweet.objects.get(id=tweet_id)
-        serializer.save(tweet=tweet)
+    filter_backends = [filters.SearchFilter,filters.OrderingFilter]
+    pagination_class = LimitOffsetPagination
+    search_fields = ['text', ]
+    ordering_fields = ['updated_at', ]
 
 
 class ReplyRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -109,5 +113,5 @@ class ReplyReactionCreateAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(
             profile=self.request.user.profile,
-            reply_id=self.kwargs['reply_id']
+            reply=get_object_or_404(Reply,pk=self.kwargs['reply_id'])
         )
