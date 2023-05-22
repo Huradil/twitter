@@ -10,7 +10,7 @@ class ReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = Reply
         fields = "__all__"
-        read_only_fields=['profile',]
+        read_only_fields=['profile','tweet']
 
 
 class TweetSerializer(serializers.ModelSerializer):

@@ -82,7 +82,8 @@ class ReplyListCreateAPIView(generics.ListCreateAPIView):
         return super().get_queryset().filter(tweet_id=self.kwargs['tweet_id'])
 
     def perform_create(self, serializer):
-        serializer.save(profile=self.request.user.profile)
+        tweet=get_object_or_404(Tweet,pk=self.kwargs['tweet_id'])
+        serializer.save(profile=self.request.user.profile,tweet=tweet)
 
 
 class ReactionTypeViewSet(viewsets.ModelViewSet):

@@ -1,18 +1,44 @@
+import io
+from django.utils import timezone
 from django.contrib import admin
 from django.db import models
+from PIL import Image,ImageDraw,ImageFont
+from django.core.files import File
 
 from accounts.models import Profile
 
 
 def tweet_image_store(instance, filename):
-    return f'profile/{instance.profile.user.username}/{instance.created_add}/{filename}'
+    return f'profile/{instance.profile.user.username}/{timezone.now().strftime("%Y%m%d_%H%M")}/{filename}'
+
+
+def process_image(img,text=None,ext='png',font_type='arial.ttf',font_size=32,new_height=None,new_width=None,
+                  draw_index_1=10,draw_index_2=10):
+
+    image = Image.open(img)
+
+    width, height = image.size
+    if new_width and new_height:
+        pass
+    elif new_width:
+        new_height = int(height * new_width / width)
+    elif new_height:
+        new_width = int(width * new_height / height)
+    if new_width:
+        image = image.resize((new_width, new_height))
+    if text:
+        img_draw = ImageDraw.Draw(image)
+        font = ImageFont.truetype(font_type, size=font_size)
+        img_draw.text((draw_index_1, draw_index_2), text, font=font,fill=(200,240,50))
+
+    image_io = io.BytesIO()
+    image.save(image_io, ext)
+    return File(image_io, f'image.{ext}')
 
 
 class Tweet(models.Model):
     text = models.CharField(max_length=140)
-    image = models.ImageField(
-        upload_to=tweet_image_store, null=True, blank=True
-    )
+    image = models.ImageField(upload_to=tweet_image_store, null=True, blank=True)
     created_add = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
@@ -20,6 +46,11 @@ class Tweet(models.Model):
     class Meta:
         verbose_name = "Твит"
         verbose_name_plural = "Твиты"
+
+    def save(self,*args,**kwargs):
+        if self.image:
+            process_image(self.image,text='property of me',font_size=24)
+        super().save(*args,**kwargs)
 
     def all_reactions(self):
         result={}
@@ -48,12 +79,22 @@ class Tweet(models.Model):
         return self.text
 
 
+def reply_upload_to(instance,filename):
+    return f'profile/{instance.profile.user.username}/{instance.tweet.text}/{filename}'
+
+
 class Reply(models.Model):
     tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
     text = models.CharField(max_length=140)
+    image = models.ImageField(upload_to=reply_upload_to,null=True,blank=True)
     created_add = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
+
+    def save(self,*args,**kwargs):
+        if self.image:
+            process_image(img=self.image,new_width=400,text='image for reply',font_size=16,draw_index_1=30,draw_index_2=50)
+        super().save(*args,**kwargs)
 
     def get_reactions(self):
         reactions=self.reactions.all()
