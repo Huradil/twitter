@@ -1,8 +1,10 @@
 .idea/
 venv/
-media/
+backend/media/
 **/__pycache__/**
-static/
+backend/static/
 
 db.sqlite3
 .env
+.env.db.prod
+.env.prod
